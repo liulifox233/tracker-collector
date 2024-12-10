@@ -30,7 +30,7 @@ fn start() {
 
 #[event(fetch)]
 async fn fetch(_req: HttpRequest, _env: Env, _ctx: Context) -> Result<Response> {
-    let trackers = get_trackes().await;
+    let trackers = get_trackers().await;
 
     let result = trackers.join(",");
 
@@ -49,7 +49,7 @@ async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
         .expect("SECRET_KEY secret not found")
         .to_string();
 
-    let trackers = get_trackes().await;
+    let trackers = get_trackers().await;
 
     info!("Total trackers: {}", trackers.len());
 
@@ -103,7 +103,7 @@ async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
     task.await;
 }
 
-async fn get_trackes() -> Vec<String> {
+async fn get_trackers() -> Vec<String> {
     tracing::info!("Fetching trackers");
     let trackers: Trackers =
         serde_yaml::from_str(include_str!("../trackers.yml")).expect("Failed to parse trackers");
