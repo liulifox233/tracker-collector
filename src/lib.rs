@@ -104,16 +104,8 @@ async fn get_trackers() -> DashSet<String> {
         let task = async move {
             let mut response = Fetch::Request(request).send().await.unwrap();
             let text = response.text().await.unwrap();
-            match serde_json::from_str::<Trackers>(&text) {
-                Ok(trackers) => {
-                    trackers_set.lock().unwrap().extend(trackers.trackers);
-                }
-                Err(_) => {
-                    let trackers_text: Vec<String> =
-                        text.split(",").map(|s| s.to_string()).collect();
-                    trackers_set.lock().unwrap().extend(trackers_text);
-                }
-            };
+            let trackers = parse_tracker(&text);
+            trackers_set.lock().unwrap().extend(trackers);
         };
         tasks.push(task);
     }
@@ -190,4 +182,23 @@ async fn change_global_option_ws(aria2_url: String, pay_load: serde_json::Value)
     info!("Message sent!");
 
     task.await;
+}
+
+fn parse_tracker(trackers_list: &str) -> DashSet<String> {
+    if let Ok(trackers) = serde_json::from_str::<Trackers>(&trackers_list) {
+        return trackers.trackers;
+    };
+    if trackers_list.contains(",") {
+        return trackers_list
+            .split(",")
+            .map(|tracker| tracker.to_string())
+            .collect();
+    }
+    if trackers_list.contains("\n\n") {
+        return trackers_list
+            .split("\n\n")
+            .map(|tracker| tracker.to_string())
+            .collect();
+    }
+    panic!("Invalid tracker list format");
 }
