@@ -7,3 +7,6 @@ command = "cargo install -q worker-build && worker-build --release"
 
 [env.dev.triggers]
 crons = ["0 * * * *"]
+
+[observability.logs]
+enabled = true
