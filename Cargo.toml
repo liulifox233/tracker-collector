@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = [ "liulifox233 <liulifox@qq.com>" ]
 license = "MIT"
-registry = "https://github.com/liulifox233/tracker-collector"
+repository = "https://github.com/liulifox233/tracker-collector"
 
 [package.metadata.release]
 release = false
