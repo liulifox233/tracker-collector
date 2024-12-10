@@ -1,9 +1,10 @@
 use futures::{SinkExt, StreamExt};
 use std::sync::{Arc, Mutex};
 use tracing::info;
-use tracing_subscriber::fmt::format::Pretty;
-use tracing_subscriber::fmt::time::UtcTime;
-use tracing_subscriber::prelude::*;
+use tracing_subscriber::{
+    fmt::{format::Pretty, time::UtcTime},
+    prelude::*,
+};
 use tracing_web::{performance_layer, MakeConsoleWriter};
 use worker::*;
 
@@ -38,7 +39,7 @@ async fn fetch(_req: HttpRequest, _env: Env, _ctx: Context) -> Result<Response> 
 
 #[event(scheduled)]
 async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
-    tracing::info!("Scheduled event");
+    info!("Scheduled event");
     let aria2_url = env
         .secret("ARIA2_URL")
         .expect("ARIA2_URL secret not found")
