@@ -10,6 +10,8 @@
 
 ## Usage
 
+### Automatically update
+
 1. Set urls in trackers.yml.
 
 2. Set CLOUDFLARE_API_TOKEN in repository secrets.
@@ -21,3 +23,8 @@
 4. Set ARIA2_URL, SECRET_KEY and schedule in Cloudflare Workers settings.
 
 5. Done.
+
+### Manually update
+
+If you're using aria2, you access trackers list by `GET /`.  
+If you're using other download tools, you can access trackers list by `GET /xxx`.(xxx can be any text, for example, `GET /abc`)

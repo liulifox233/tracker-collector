@@ -31,7 +31,8 @@ fn start() {
 }
 
 #[event(fetch)]
-async fn fetch(_req: HttpRequest, _env: Env, _ctx: Context) -> Result<Response> {
+async fn fetch(req: HttpRequest, _env: Env, _ctx: Context) -> Result<Response> {
+    let spilter = if req.uri().path() == "/" { "," } else { "\n\n" };
     let trackers = get_trackers().await;
 
     let result = Vec::from(
@@ -40,7 +41,7 @@ async fn fetch(_req: HttpRequest, _env: Env, _ctx: Context) -> Result<Response> 
             .map(|tracker| tracker.clone())
             .collect::<Vec<String>>(),
     )
-    .join(",");
+    .join(&spilter);
 
     Response::ok(result)
 }
