@@ -6,7 +6,7 @@
 
 1. Fetch the tracker list from urls in trackers.yml.
 2. Merge the tracker list with the trackers from the request.
-3. (scheduled) Connect to aria2 with JSON-RPC over WebSocket, then add the trackers to aria2.
+3. (scheduled) Connect to aria2 with JSON-RPC, then add the trackers to aria2.
 
 ## Usage
 

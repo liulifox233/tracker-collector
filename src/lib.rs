@@ -6,6 +6,7 @@ use tracing_subscriber::{
     prelude::*,
 };
 use tracing_web::{performance_layer, MakeConsoleWriter};
+use wasm_bindgen::JsValue;
 use worker::*;
 
 #[derive(serde::Deserialize, Debug)]
@@ -66,41 +67,11 @@ async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
             }
         ]
     });
-
-    let ws_stream = tokio_tungstenite_wasm::connect(aria2_url)
-        .await
-        .expect("Failed to connect to websocket");
-
-    let (mut tx, mut rx) = ws_stream.split();
-
-    info!("Connected to websocket");
-
-    let task = async {
-        while let Some(msg) = rx.next().await {
-            let msg = msg.expect("Failed to receive message");
-            let msg = serde_json::from_str::<serde_json::Value>(&msg.to_string())
-                .expect("Failed to parse message");
-            if Some("cron") == msg.get("id").and_then(|v| v.as_str()) {
-                match msg.get("result") {
-                    Some(result) => {
-                        info!("Result: {:#?}", result);
-                    }
-                    None => {
-                        info!("Error: {:#?}", msg["error"]);
-                    }
-                }
-                break;
-            }
-        }
-    };
-
-    tx.send(tokio_tungstenite_wasm::Message::text(pay_load.to_string()))
-        .await
-        .expect("Failed to send message");
-
-    info!("Message sent!");
-
-    task.await;
+    if aria2_url.starts_with("http") {
+        change_global_option_http(aria2_url, pay_load).await;
+    } else {
+        change_global_option_ws(aria2_url, pay_load).await;
+    }
 }
 
 async fn get_trackers() -> Vec<String> {
@@ -138,4 +109,72 @@ async fn get_trackers() -> Vec<String> {
 
     let trackers = trackers_vec.lock().unwrap().clone();
     trackers
+}
+
+async fn change_global_option_http(aria2_url: String, pay_load: serde_json::Value) {
+    let mut headers = Headers::new();
+    headers.set("Content-Type", "application/json").unwrap();
+    let request = Request::new_with_init(
+        &aria2_url,
+        &RequestInit {
+            method: Method::Post,
+            headers,
+            body: Some(JsValue::from(pay_load.to_string())),
+            ..RequestInit::default()
+        },
+    )
+    .expect("Failed to create request");
+
+    let response = Fetch::Request(request)
+        .send()
+        .await
+        .expect("Failed to send request")
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
+    match response.get("result") {
+        Some(result) => {
+            info!("Response: {}", result.to_string());
+        }
+        None => {
+            info!("Error: {:#?}", response["error"]);
+        }
+    }
+}
+
+async fn change_global_option_ws(aria2_url: String, pay_load: serde_json::Value) {
+    let ws_stream = tokio_tungstenite_wasm::connect(aria2_url)
+        .await
+        .expect("Failed to connect to websocket");
+
+    let (mut tx, mut rx) = ws_stream.split();
+
+    info!("Connected to websocket");
+
+    let task = async {
+        while let Some(msg) = rx.next().await {
+            let msg = msg.expect("Failed to receive message");
+            let msg = serde_json::from_str::<serde_json::Value>(&msg.to_string())
+                .expect("Failed to parse message");
+            if Some("cron") == msg.get("id").and_then(|v| v.as_str()) {
+                match msg.get("result") {
+                    Some(result) => {
+                        info!("Result: {:#?}", result);
+                    }
+                    None => {
+                        info!("Error: {:#?}", msg["error"]);
+                    }
+                }
+                break;
+            }
+        }
+    };
+
+    tx.send(tokio_tungstenite_wasm::Message::text(pay_load.to_string()))
+        .await
+        .expect("Failed to send message");
+
+    info!("Message sent!");
+
+    task.await;
 }
