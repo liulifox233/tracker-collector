@@ -1,5 +1,7 @@
 # tracker-collector
 
+![metadata](https://github.com/liulifox233/tracker-collector/actions/workflows/deploy.yml/badge.svg)
+
 ## How it works?
 
 1. Fetch the tracker list from urls in trackers.yml.
