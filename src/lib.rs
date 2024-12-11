@@ -157,7 +157,7 @@ async fn change_global_option_ws(aria2_url: String, pay_load: serde_json::Value)
 
     info!("Connected to websocket");
 
-    let task = async {
+    let receive_task = async move {
         while let Some(msg) = rx.next().await {
             let msg = msg.expect("Failed to receive message");
             let msg = serde_json::from_str::<serde_json::Value>(&msg.to_string())
@@ -176,13 +176,14 @@ async fn change_global_option_ws(aria2_url: String, pay_load: serde_json::Value)
         }
     };
 
-    tx.send(tokio_tungstenite_wasm::Message::text(pay_load.to_string()))
-        .await
-        .expect("Failed to send message");
+    let send_task = async move {
+        tx.send(tokio_tungstenite_wasm::Message::text(pay_load.to_string()))
+            .await
+            .expect("Failed to send message");
+        info!("Message sent!");
+    };
 
-    info!("Message sent!");
-
-    task.await;
+    futures::future::join(receive_task, send_task).await;
 }
 
 fn parse_tracker(trackers_list: &str) -> DashSet<String> {
