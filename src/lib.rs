@@ -93,14 +93,18 @@ async fn get_trackers() -> DashSet<String> {
     let trackers: Trackers =
         serde_yaml::from_str(include_str!("../trackers.yml")).expect("Failed to parse trackers");
     tracing::info!("Trackers: {:#?}", trackers);
-    let requests: Vec<Request> = trackers
+    let (trackers_vec, request): (Vec<String>, Vec<String>) = trackers
         .trackers
+        .into_iter()
+        .partition(|tracker| tracker.ends_with("announce"));
+    let trackers_set: DashSet<String> = trackers_vec.into_iter().collect();
+    let requests: Vec<Request> = request
         .iter()
         .map(|tracker| Request::new(&tracker, Method::Get).expect("Failed to create request"))
         .collect();
-    let trackers_set = Arc::new(Mutex::new(DashSet::new()));
+    let trackers_set = Arc::new(Mutex::new(trackers_set));
     let mut tasks = Vec::new();
-    for request in requests {
+    requests.into_iter().for_each(|request| {
         let trackers_set = trackers_set.clone();
         let task = async move {
             let mut response = Fetch::Request(request).send().await.unwrap();
@@ -109,7 +113,7 @@ async fn get_trackers() -> DashSet<String> {
             trackers_set.lock().unwrap().extend(trackers);
         };
         tasks.push(task);
-    }
+    });
 
     futures::future::join_all(tasks).await;
 
